@@ -32,10 +32,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- Database Connection (using local MongoDB) ---
-// const dbURI = 'mongodb://127.0.0.1:27017/campus-lost-and-found';
-// mongoose.connect(dbURI)
-const dbURI = process.env.MONGO_URI;
-
+const dbURI = 'mongodb://127.0.0.1:27017/campus-lost-and-found';
 mongoose.connect(dbURI, {
 useNewUrlParser: true,
 useUnifiedTopology: true
