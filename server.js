@@ -3,7 +3,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
-const MongoStore = require('connect-mongo'); // <-- ADDED for persistent sessions
+const MongoStore = require('connect-mongo');
 require('dotenv').config();
 
 // --- INITIALIZE APP ---
@@ -18,7 +18,6 @@ mongoose.connect(dbURI)
     .catch((err) => console.error('Error connecting to MongoDB:', err));
 
 // --- MONGOOSE MODELS ---
-// In a larger app, these would be in separate files in a /models directory.
 const UserSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
@@ -48,13 +47,13 @@ app.use(express.json());
 
 // --- SESSION CONFIGURATION (UPDATED FOR PRODUCTION) ---
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'a-fallback-secret-for-development', // Use environment variable
+    secret: process.env.SESSION_SECRET || 'a-fallback-secret-for-development',
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({ // Store sessions in MongoDB
+    store: MongoStore.create({
         mongoUrl: dbURI,
-        collectionName: 'sessions', // Optional: name of the sessions collection
-        ttl: 14 * 24 * 60 * 60 // = 14 days. Default
+        collectionName: 'sessions',
+        ttl: 14 * 24 * 60 * 60 // 14 days
     }),
     cookie: {
         maxAge: 1000 * 60 * 60 * 24 // 1 day
@@ -75,7 +74,7 @@ const isAuthenticated = (req, res, next) => {
     next();
 };
 
-// --- DATA (Could be moved to a config file) ---
+// --- DATA ---
 const universities = ["Vellore Institute of Technology", "SRM University", "IIT Madras", "Amity University", "Manipal University"];
 
 // --- PAGE & ITEM ROUTES ---
@@ -114,7 +113,6 @@ app.get('/item/:id', async (req, res) => {
     }
 });
 
-// Protected routes now use the isAuthenticated middleware
 app.get('/report', isAuthenticated, (req, res) => {
     res.render('report', { universities });
 });
@@ -153,7 +151,6 @@ app.get('/my-posts', isAuthenticated, async (req, res) => {
 app.post('/items/:id/delete', isAuthenticated, async (req, res) => {
     try {
         const item = await Item.findById(req.params.id);
-        // Ensure the item exists and the user is authorized to delete it
         if (!item) {
             return res.status(404).send('Item not found.');
         }
