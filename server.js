@@ -3,10 +3,22 @@ const path = require('path');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
+const MongoStore = require('connect-mongo'); // <-- ADDED for persistent sessions
 require('dotenv').config();
 
-// --- Mongoose Models ---
-// For simplicity, we define schemas here. In a larger app, these would be in /models.
+// --- INITIALIZE APP ---
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// --- DATABASE CONNECTION ---
+const dbURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/campus-lost-found';
+
+mongoose.connect(dbURI)
+    .then(() => console.log('Successfully connected to MongoDB!'))
+    .catch((err) => console.error('Error connecting to MongoDB:', err));
+
+// --- MONGOOSE MODELS ---
+// In a larger app, these would be in separate files in a /models directory.
 const UserSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
@@ -27,124 +39,181 @@ const ItemSchema = new mongoose.Schema({
 }, { timestamps: true });
 const Item = mongoose.model('Item', ItemSchema);
 
-
-// --- Initialize App ---
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// --- Database Connection (using local MongoDB) ---
-const dbURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/campus-lost-found';
-mongoose.connect(dbURI)
-    .then(() => console.log('Successfully connected to local MongoDB!'))
-    .catch((err) => console.error('Error connecting to MongoDB:', err));
-
-// --- Middleware Setup ---
+// --- MIDDLEWARE SETUP ---
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// --- Session Configuration ---
+// --- SESSION CONFIGURATION (UPDATED FOR PRODUCTION) ---
 app.use(session({
-    secret: 'a secret key for lost and found',
+    secret: process.env.SESSION_SECRET || 'a-fallback-secret-for-development', // Use environment variable
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 } // 1 day
+    store: MongoStore.create({ // Store sessions in MongoDB
+        mongoUrl: dbURI,
+        collectionName: 'sessions', // Optional: name of the sessions collection
+        ttl: 14 * 24 * 60 * 60 // = 14 days. Default
+    }),
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 24 // 1 day
+    }
 }));
 
+// Middleware to make user info available in all views
 app.use((req, res, next) => {
     res.locals.user = req.session.user;
     next();
 });
 
-// --- Data ---
+// --- CUSTOM MIDDLEWARE FOR ROUTE PROTECTION ---
+const isAuthenticated = (req, res, next) => {
+    if (!req.session.user) {
+        return res.redirect('/login');
+    }
+    next();
+};
+
+// --- DATA (Could be moved to a config file) ---
 const universities = ["Vellore Institute of Technology", "SRM University", "IIT Madras", "Amity University", "Manipal University"];
 
-// --- Page & Item Routes ---
-app.get('/', (req, res) => res.render('index', { universities }));
+// --- PAGE & ITEM ROUTES ---
+app.get('/', (req, res) => {
+    res.render('index', { universities });
+});
 
 app.get('/items', async (req, res) => {
     try {
         const { university, status, search } = req.query;
-        if (!university) return res.redirect('/');
+        if (!university) {
+            return res.redirect('/');
+        }
         let query = { university };
         if (status) query.status = status;
         if (search) query.name = { $regex: search, $options: 'i' };
+        
         const items = await Item.find(query).sort({ createdAt: -1 });
         res.render('items', { items, university, currentStatus: status, searchTerm: search });
-    } catch (error) { res.send('Error fetching items.'); }
+    } catch (error) {
+        console.error('Error fetching items:', error);
+        res.status(500).send('Error fetching items.');
+    }
 });
 
 app.get('/item/:id', async (req, res) => {
     try {
         const item = await Item.findById(req.params.id);
-        if (!item) return res.status(404).send('Item not found');
+        if (!item) {
+            return res.status(404).send('Item not found');
+        }
         res.render('item-detail', { item });
-    } catch (error) { res.send('Error fetching item details.'); }
+    } catch (error) {
+        console.error('Error fetching item details:', error);
+        res.status(500).send('Error fetching item details.');
+    }
 });
 
-app.get('/report', (req, res) => {
-    if (!req.session.user) return res.redirect('/login');
+// Protected routes now use the isAuthenticated middleware
+app.get('/report', isAuthenticated, (req, res) => {
     res.render('report', { universities });
 });
 
-app.post('/report', async (req, res) => {
-    if (!req.session.user) return res.redirect('/login');
+app.post('/report', isAuthenticated, async (req, res) => {
     try {
         const { status, itemName, description, category, university, contactEmail, contactPhone } = req.body;
         await new Item({
-            name: itemName, description, status, category, university, contactEmail, contactPhone,
-            imageUrl: `https://placehold.co/600x400/${status === 'Lost' ? 'ef4444' : '22c55e'}/ffffff?text=${status}`,
+            name: itemName,
+            description,
+            status,
+            category,
+            university,
+            contactEmail,
+            contactPhone,
+            imageUrl: `https://placehold.co/600x400/${status === 'Lost' ? 'ef4444' : '22c55e'}/ffffff?text=${encodeURIComponent(itemName)}`,
             reportedBy: req.session.user.id
         }).save();
-        res.redirect(`/items?university=${university}`);
-    } catch (error) { res.send('Error submitting report.'); }
+        res.redirect(`/items?university=${encodeURIComponent(university)}`);
+    } catch (error) {
+        console.error('Error submitting report:', error);
+        res.status(500).send('Error submitting report.');
+    }
 });
 
-app.get('/my-posts', async (req, res) => {
-    if (!req.session.user) return res.redirect('/login');
+app.get('/my-posts', isAuthenticated, async (req, res) => {
     try {
         const userItems = await Item.find({ reportedBy: req.session.user.id }).sort({ createdAt: -1 });
         res.render('my-posts', { items: userItems });
-    } catch (error) { res.send('Error fetching your posts.'); }
+    } catch (error) {
+        console.error('Error fetching your posts:', error);
+        res.status(500).send('Error fetching your posts.');
+    }
 });
 
-app.post('/items/:id/delete', async (req, res) => {
-    if (!req.session.user) return res.redirect('/login');
+app.post('/items/:id/delete', isAuthenticated, async (req, res) => {
     try {
         const item = await Item.findById(req.params.id);
+        // Ensure the item exists and the user is authorized to delete it
+        if (!item) {
+            return res.status(404).send('Item not found.');
+        }
         if (item.reportedBy.toString() !== req.session.user.id) {
-            return res.status(403).send('You can only delete your own posts.');
+            return res.status(403).send('You are not authorized to delete this post.');
         }
         await Item.findByIdAndDelete(req.params.id);
         res.redirect('/my-posts');
-    } catch (error) { res.send('Error deleting item.'); }
+    } catch (error) {
+        console.error('Error deleting item:', error);
+        res.status(500).send('Error deleting item.');
+    }
 });
 
-// --- User Auth Routes ---
+// --- USER AUTH ROUTES ---
 app.get('/signup', (req, res) => res.render('signup'));
+
 app.post('/signup', async (req, res) => {
     try {
         const { name, email, password } = req.body;
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).send('An account with this email already exists.');
+        }
         const hashedPassword = await bcrypt.hash(password, 10);
         await new User({ name, email, password: hashedPassword }).save();
         res.redirect('/login');
-    } catch (error) { res.send('Email already exists.'); }
+    } catch (error) {
+        console.error('Signup error:', error);
+        res.status(500).send('Error creating account.');
+    }
 });
+
 app.get('/login', (req, res) => res.render('login'));
+
 app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
         if (user && await bcrypt.compare(password, user.password)) {
-            req.session.user = { id: user._id, name: user.name };
+            req.session.user = { id: user._id, name: user.name, email: user.email };
             res.redirect('/');
-        } else { res.send('Invalid credentials.'); }
-    } catch (error) { res.send('Error logging in.'); }
-});
-app.get('/logout', (req, res) => {
-    req.session.destroy(() => res.redirect('/'));
+        } else {
+            res.status(401).send('Invalid email or password.');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).send('Error logging in.');
+    }
 });
 
+app.get('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            console.error('Logout error:', err);
+            return res.status(500).send('Could not log you out.');
+        }
+        res.redirect('/');
+    });
+});
+
+// --- SERVER LISTENER ---
 app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
