@@ -3,6 +3,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
+require('dotenv').config();
 
 // --- Mongoose Models ---
 // For simplicity, we define schemas here. In a larger app, these would be in /models.
@@ -32,7 +33,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- Database Connection (using local MongoDB) ---
-const dbURI = 'mongodb://127.0.0.1:27017/campus-lost-and-found';
+const dbURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/campus-lost-found';
 mongoose.connect(dbURI)
     .then(() => console.log('Successfully connected to local MongoDB!'))
     .catch((err) => console.error('Error connecting to MongoDB:', err));
