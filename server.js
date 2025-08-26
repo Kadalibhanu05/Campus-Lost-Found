@@ -29,13 +29,17 @@ const Item = mongoose.model('Item', ItemSchema);
 
 // --- Initialize App ---
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // --- Database Connection (using local MongoDB) ---
-const dbURI = 'mongodb://127.0.0.1:27017/campus-lost-and-found';
-mongoose.connect(dbURI)
-    .then(() => console.log('Successfully connected to local MongoDB!'))
-    .catch((err) => console.error('Error connecting to MongoDB:', err));
+const dbURI = process.env.MONGO_URI;
+
+mongoose.connect(dbURI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('Connected to MongoDB Atlas!'))
+.catch((err) => console.error('Error connecting to MongoDB:', err));
 
 // --- Middleware Setup ---
 app.set('view engine', 'ejs');
