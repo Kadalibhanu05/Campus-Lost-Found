@@ -1,50 +1,80 @@
-<!-- views/report.ejs -->
 <%- include('partials/header') %>
 <div class="container mx-auto px-4 py-8 max-w-lg">
     <div class="bg-white p-8 rounded-lg shadow-md">
         <h2 class="text-2xl font-bold text-center mb-6">Report an Item</h2>
-        <!-- IMPORTANT: Add enctype for file uploads -->
-        <form action="/report" method="POST" enctype="multipart/form-data" class="space-y-4">
+        
+        <form id="reportForm" action="/report" method="POST" enctype="multipart/form-data" class="space-y-4">
             <div>
-                <label class="block text-sm font-medium">University</label>
-                <select name="university" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+                <label for="university" class="block text-sm font-medium">University</label>
+                <select id="university" name="university" class="w-full mt-1 px-3 py-2 border rounded-md" required>
                     <% universities.forEach(uni => { %><option value="<%= uni %>"><%= uni %></option><% }); %>
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium">Status</label>
-                <select name="status" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+                <label for="status" class="block text-sm font-medium">Status</label>
+                <select id="status" name="status" class="w-full mt-1 px-3 py-2 border rounded-md" required>
                     <option value="Lost">I Lost Something</option>
                     <option value="Found">I Found Something</option>
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium">Item Name</label>
-                <input type="text" name="itemName" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+                <label for="itemName" class="block text-sm font-medium">Item Name</label>
+                <input id="itemName" type="text" name="itemName" class="w-full mt-1 px-3 py-2 border rounded-md" required>
             </div>
             <div>
-                <label class="block text-sm font-medium">Category</label>
-                <input type="text" name="category" placeholder="e.g., Electronics, Book, ID Card" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+                <label for="category" class="block text-sm font-medium">Category</label>
+                <input id="category" type="text" name="category" placeholder="e.g., Electronics, Book, ID Card" class="w-full mt-1 px-3 py-2 border rounded-md" required>
             </div>
-            <!-- NEW: Image Upload Field -->
+            
             <div>
-                <label class="block text-sm font-medium">Upload Image</label>
-                <input type="file" name="itemImage" class="w-full mt-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100" required>
+                <label for="itemImage" class="block text-sm font-medium">Upload Image</label>
+                <input id="itemImage" type="file" name="itemImage" accept="image/*" class="w-full mt-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100" required>
+                <img id="imagePreview" src="#" alt="Image Preview" class="mt-4 rounded-md shadow-sm hidden max-h-60 w-auto mx-auto"/>
             </div>
+
             <div>
-                <label class="block text-sm font-medium">Description</label>
-                <textarea name="description" rows="3" class="w-full mt-1 px-3 py-2 border rounded-md" required></textarea>
-            </div>
-            <div>
-                <label class="block text-sm font-medium">Contact Email</label>
-                <input type="email" name="contactEmail" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+                <label for="description" class="block text-sm font-medium">Description</label>
+                <textarea id="description" name="description" rows="3" class="w-full mt-1 px-3 py-2 border rounded-md" required></textarea>
             </div>
             <div>
-                <label class="block text-sm font-medium">Contact Phone</label>
-                <input type="tel" name="contactPhone" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+                <label for="contactEmail" class="block text-sm font-medium">Contact Email</label>
+                <input id="contactEmail" type="email" name="contactEmail" class="w-full mt-1 px-3 py-2 border rounded-md" required>
             </div>
-            <button type="submit" class="w-full py-3 bg-teal-500 text-white font-semibold rounded-md">Submit</button>
+            <div>
+                <label for="contactPhone" class="block text-sm font-medium">Contact Phone</label>
+                <input id="contactPhone" type="tel" name="contactPhone" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+            </div>
+
+            <button id="submitButton" type="submit" class="w-full py-3 bg-teal-500 text-white font-semibold rounded-md transition-colors duration-200 hover:bg-teal-600 disabled:bg-gray-400">Submit</button>
         </form>
     </div>
 </div>
+
+<script>
+    const reportForm = document.getElementById('reportForm');
+    const submitButton = document.getElementById('submitButton');
+    const itemImageInput = document.getElementById('itemImage');
+    const imagePreview = document.getElementById('imagePreview');
+
+    // 1. Image Preview Logic
+    itemImageInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.classList.remove('hidden'); // Show the preview
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // 2. Form Submission Logic
+    reportForm.addEventListener('submit', function() {
+        // Change button text and disable it to prevent multiple submissions
+        submitButton.disabled = true;
+        submitButton.textContent = 'Submitting...';
+    });
+</script>
+
 <%- include('partials/footer') %>
