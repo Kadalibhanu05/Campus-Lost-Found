@@ -4,11 +4,25 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
+const multer = require('multer'); // <-- NEW: for file uploads
+const cloudinary = require('cloudinary').v2; // <-- NEW: for image hosting
 require('dotenv').config();
 
 // --- INITIALIZE APP ---
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// --- CONFIGURE CLOUDINARY --- (NEW SECTION)
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// --- CONFIGURE MULTER --- (NEW SECTION)
+// Use memory storage to temporarily hold the file before uploading to Cloudinary
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 // --- DATABASE CONNECTION ---
 const dbURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/campus-lost-found';
@@ -17,7 +31,7 @@ mongoose.connect(dbURI)
     .then(() => console.log('Successfully connected to MongoDB!'))
     .catch((err) => console.error('Error connecting to MongoDB:', err));
 
-// --- MONGOOSE MODELS ---
+// --- MONGOOSE MODELS  ---
 const UserSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
@@ -31,21 +45,21 @@ const ItemSchema = new mongoose.Schema({
     status: { type: String, required: true, enum: ['Lost', 'Found'] },
     category: { type: String, required: true, trim: true },
     university: { type: String, required: true, trim: true },
-    imageUrl: { type: String, required: true },
+    imageUrl: { type: String, required: true }, // This will now store a Cloudinary URL
     contactEmail: { type: String, required: true },
     contactPhone: { type: String, required: true },
     reportedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
 }, { timestamps: true });
 const Item = mongoose.model('Item', ItemSchema);
 
-// --- MIDDLEWARE SETUP ---
+// --- MIDDLEWARE SETUP  ---
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// --- SESSION CONFIGURATION (UPDATED FOR PRODUCTION) ---
+// --- SESSION CONFIGURATION  ---
 app.use(session({
     secret: process.env.SESSION_SECRET || 'a-fallback-secret-for-development',
     resave: false,
@@ -60,13 +74,11 @@ app.use(session({
     }
 }));
 
-// Middleware to make user info available in all views
 app.use((req, res, next) => {
     res.locals.user = req.session.user;
     next();
 });
 
-// --- CUSTOM MIDDLEWARE FOR ROUTE PROTECTION ---
 const isAuthenticated = (req, res, next) => {
     if (!req.session.user) {
         return res.redirect('/login');
@@ -74,10 +86,10 @@ const isAuthenticated = (req, res, next) => {
     next();
 };
 
-// --- DATA ---
+// --- DATA  ---
 const universities = ["Vellore Institute of Technology", "SRM University", "IIT Madras", "Amity University", "Manipal University"];
 
-// --- PAGE & ITEM ROUTES ---
+// --- PAGE & ITEM ROUTES (Only /report POST is changed) ---
 app.get('/', (req, res) => {
     res.render('index', { universities });
 });
@@ -117,9 +129,36 @@ app.get('/report', isAuthenticated, (req, res) => {
     res.render('report', { universities });
 });
 
-app.post('/report', isAuthenticated, async (req, res) => {
+// --- UPDATED /report ROUTE TO HANDLE IMAGE UPLOAD ---
+// We add the `upload.single('itemImage')` middleware here
+app.post('/report', isAuthenticated, upload.single('itemImage'), async (req, res) => {
     try {
+        // Wrap the Cloudinary upload in a Promise to use async/await
+        const uploadToCloudinary = () => {
+            return new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    { folder: "campus-lost-found" }, // Optional: organizes uploads in a folder
+                    (error, result) => {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve(result);
+                        }
+                    }
+                );
+                // Write the file buffer to the stream
+                stream.end(req.file.buffer);
+            });
+        };
+
+        // Upload the image and get the result
+        const result = await uploadToCloudinary();
+        const imageUrl = result.secure_url; // Get the secure URL from Cloudinary
+
+        // Get the rest of the form data from req.body
         const { status, itemName, description, category, university, contactEmail, contactPhone } = req.body;
+
+        // Create and save the new item with the Cloudinary image URL
         await new Item({
             name: itemName,
             description,
@@ -128,9 +167,10 @@ app.post('/report', isAuthenticated, async (req, res) => {
             university,
             contactEmail,
             contactPhone,
-            imageUrl: `https://placehold.co/600x400/${status === 'Lost' ? 'ef4444' : '22c55e'}/ffffff?text=${encodeURIComponent(itemName)}`,
+            imageUrl: imageUrl, // Use the new Cloudinary URL
             reportedBy: req.session.user.id
         }).save();
+
         res.redirect(`/items?university=${encodeURIComponent(university)}`);
     } catch (error) {
         console.error('Error submitting report:', error);
@@ -165,7 +205,7 @@ app.post('/items/:id/delete', isAuthenticated, async (req, res) => {
     }
 });
 
-// --- USER AUTH ROUTES ---
+// --- USER AUTH ROUTES  ---
 app.get('/signup', (req, res) => res.render('signup'));
 
 app.post('/signup', async (req, res) => {
