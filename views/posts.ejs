@@ -1,0 +1,61 @@
+<%- include('partials/header') %>
+<div class="container mx-auto px-4 py-10">
+    <div class="flex justify-between items-center mb-8 border-b border-slate-200 pb-4">
+        <h1 class="text-3xl font-bold text-slate-900">My Reported Items</h1>
+        <a href="/report" class="inline-flex items-center px-4 py-2 bg-indigo-100 text-indigo-700 font-bold rounded-lg hover:bg-indigo-200 transition">
+            + Report New
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <% if (items.length > 0) { %>
+            <% items.forEach(item => { %>
+                <div class="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 border border-slate-100 flex flex-col h-full overflow-hidden group">
+                    
+                    <a href="/item/<%= item._id %>" class="block relative h-52 overflow-hidden bg-slate-100">
+                        <img src="<%= item.imageUrl %>" 
+                             class="w-full h-full object-cover transform group-hover:scale-105 transition duration-500" 
+                             onerror="this.onerror=null;this.src='https://placehold.co/600x400/f1f5f9/94a3b8?text=No+Image';">
+                        
+                        <span class="absolute top-3 right-3 px-3 py-1 text-xs font-extrabold uppercase tracking-wide rounded-full shadow-sm 
+                            <%= item.status === 'Lost' ? 'bg-red-500 text-white' : 'bg-amber-400 text-indigo-900' %>">
+                            <%= item.status %>
+                        </span>
+                    </a>
+
+                    <div class="p-6 flex-grow flex flex-col">
+                        <div class="flex-grow">
+                            <h3 class="text-xl font-bold text-slate-800 mb-1 truncate"><%= item.name %></h3>
+                            <p class="text-sm text-indigo-500 font-medium mb-3"><%= item.university %></p>
+                            <p class="text-sm text-slate-500 line-clamp-2 leading-relaxed"><%= item.description %></p>
+                        </div>
+
+                        <div class="mt-6 flex gap-3 border-t border-slate-100 pt-4">
+                            <a href="/items/<%= item._id %>/edit" 
+                               class="flex-1 flex items-center justify-center py-2.5 text-sm font-bold text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition">
+                                Edit
+                            </a>
+
+                            <form action="/items/<%= item._id %>/delete" method="POST" class="flex-1" onsubmit="return confirm('Delete this item?');">
+                                <button type="submit" 
+                                    class="w-full py-2.5 text-sm font-bold text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <div class="col-span-full flex flex-col items-center justify-center py-20 text-center">
+                <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-300">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-slate-700">No items reported yet</h3>
+                <p class="text-slate-500 mt-1 mb-4">You haven't posted anything.</p>
+                <a href="/report" class="text-indigo-600 font-bold hover:underline">Report your first item</a>
+            </div>
+        <% } %>
+    </div>
+</div>
+<%- include('partials/footer') %>

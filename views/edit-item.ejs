@@ -1,0 +1,66 @@
+<%- include('partials/header') %>
+<div class="container mx-auto px-4 py-8 max-w-lg">
+    <div class="bg-white p-8 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold text-center mb-6">Edit Item</h2>
+        
+        <form action="/items/<%= item._id %>/update" method="POST" enctype="multipart/form-data" class="space-y-4">
+            
+            <div>
+                <label for="university" class="block text-sm font-medium">University</label>
+                <select id="university" name="university" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+                    <% universities.forEach(uni => { %>
+                        <option value="<%= uni.name %>" <%= item.university === uni.name ? 'selected' : '' %>>
+                            <%= uni.name %>
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <div>
+                <label for="status" class="block text-sm font-medium">Status</label>
+                <select id="status" name="status" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+                    <option value="Lost" <%= item.status === 'Lost' ? 'selected' : '' %>>I Lost Something</option>
+                    <option value="Found" <%= item.status === 'Found' ? 'selected' : '' %>>I Found Something</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="itemName" class="block text-sm font-medium">Item Name</label>
+                <input id="itemName" type="text" name="itemName" value="<%= item.name %>" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+            </div>
+
+            <div>
+                <label for="category" class="block text-sm font-medium">Category</label>
+                <input id="category" type="text" name="category" value="<%= item.category %>" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium">Current Image</label>
+                <img src="<%= item.imageUrl %>" class="h-20 w-auto rounded mt-2 mb-2 border">
+                
+                <label for="itemImage" class="block text-sm font-medium text-gray-700">Change Image (Optional)</label>
+                <input id="itemImage" type="file" name="itemImage" accept="image/*" class="w-full mt-1 text-sm text-gray-500">
+            </div>
+
+            <div>
+                <label for="description" class="block text-sm font-medium">Description</label>
+                <textarea id="description" name="description" rows="3" class="w-full mt-1 px-3 py-2 border rounded-md" required><%= item.description %></textarea>
+            </div>
+
+            <div>
+                <label for="contactEmail" class="block text-sm font-medium">Contact Email</label>
+                <input id="contactEmail" type="email" name="contactEmail" value="<%= item.contactEmail %>" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+            </div>
+            <div>
+                <label for="contactPhone" class="block text-sm font-medium">Contact Phone</label>
+                <input id="contactPhone" type="tel" name="contactPhone" value="<%= item.contactPhone %>" class="w-full mt-1 px-3 py-2 border rounded-md" required>
+            </div>
+
+            <div class="flex gap-4 pt-4">
+                <a href="/my-posts" class="flex-1 py-3 text-center border border-gray-300 text-gray-700 font-semibold rounded-md hover:bg-gray-50">Cancel</a>
+                <button type="submit" class="flex-1 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Update Item</button>
+            </div>
+        </form>
+    </div>
+</div>
+<%- include('partials/footer') %>

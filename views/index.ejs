@@ -1,0 +1,54 @@
+<%- include('partials/header') %>
+
+<div class="container mx-auto px-4 py-20 text-center min-h-[80vh] flex flex-col justify-center">
+    
+    <h1 class="text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight mb-6">
+        Find What You're <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-amber-500">Missing</span>
+    </h1>
+    
+    <p class="mt-4 text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed">
+        Select your university below to see all lost and found items currently reported on your campus.
+    </p>
+
+    <div class="max-w-xl mx-auto w-full relative z-10">
+        <form action="/items" method="GET" class="flex flex-col sm:flex-row items-center gap-3 bg-white p-3 rounded-2xl shadow-xl border border-slate-200">
+            <div class="relative w-full">
+                <select name="university" class="w-full appearance-none px-6 py-4 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 font-semibold cursor-pointer transition hover:bg-white" required>
+                    <option value="" disabled selected>Select your university...</option>
+                    <% if (universities && universities.length > 0) { %>
+                        <% universities.forEach(uni => { %>
+                            <option value="<%= uni.name %>"><%= uni.name %></option>
+                        <% }); %>
+                    <% } else { %>
+                        <option value="" disabled>No universities added yet</option>
+                    <% } %>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+            </div>
+            
+            <button type="submit" class="w-full sm:w-auto px-8 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 transition-all transform hover:scale-[1.02] shadow-lg whitespace-nowrap">
+                Search
+            </button>
+        </form>
+    </div>
+
+    <% if (user) { %>
+        <div class="mt-16 max-w-md mx-auto">
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                <p class="text-xs uppercase tracking-wide text-slate-400 font-bold mb-3">Missing a Campus?</p>
+                <form action="/add-university" method="POST" class="flex gap-2">
+                    <input type="text" name="newUniversity" placeholder="Enter university name..." required
+                        class="flex-1 px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700">
+                    <button type="submit" class="px-4 py-2 text-sm bg-slate-800 text-white font-semibold rounded-lg hover:bg-slate-900 transition">
+                        Add +
+                    </button>
+                </form>
+            </div>
+        </div>
+    <% } %>
+
+</div>
+
+<%- include('partials/footer') %>

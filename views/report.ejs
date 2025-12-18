@@ -1,0 +1,98 @@
+<%- include('partials/header') %>
+<div class="container mx-auto px-4 py-12 max-w-2xl">
+    <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-lg border border-slate-100">
+        <h2 class="text-3xl font-bold text-center text-slate-900 mb-2">Report an Item</h2>
+        <p class="text-center text-slate-500 mb-8">Fill in the details below to help the community.</p>
+        
+        <form id="reportForm" action="/report" method="POST" enctype="multipart/form-data" class="space-y-6">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">University</label>
+                    <select id="university" name="university" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                        <option value="" disabled selected>Select Campus</option>
+                        <% if (universities && universities.length > 0) { %>
+                            <% universities.forEach(uni => { %>
+                                <option value="<%= uni.name %>"><%= uni.name %></option>
+                            <% }); %>
+                        <% } %>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Status</label>
+                    <select id="status" name="status" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                        <option value="Lost">I Lost Something</option>
+                        <option value="Found">I Found Something</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Item Name</label>
+                    <input id="itemName" type="text" name="itemName" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="e.g. Blue Wallet" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Category</label>
+                    <input id="category" type="text" name="category" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Electronics" required>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Upload Photo</label>
+                <div class="relative border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:bg-slate-50 transition">
+                    <input id="itemImage" type="file" name="itemImage" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required>
+                    <div class="text-slate-500">
+                        <span class="text-indigo-600 font-semibold">Click to upload</span> or drag and drop
+                    </div>
+                </div>
+                <img id="imagePreview" src="#" alt="Preview" class="mt-4 rounded-lg shadow-md hidden max-h-48 mx-auto object-cover"/>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Description</label>
+                <textarea id="description" name="description" rows="3" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Details..." required></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Contact Email</label>
+                    <input id="contactEmail" type="email" name="contactEmail" value="<%= user.email %>" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Phone</label>
+                    <input id="contactPhone" type="tel" name="contactPhone" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+            </div>
+
+            <button id="submitButton" type="submit" class="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 transition-all transform hover:scale-[1.01]">Submit Report</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const itemImageInput = document.getElementById('itemImage');
+    const imagePreview = document.getElementById('imagePreview');
+    const reportForm = document.getElementById('reportForm');
+    const submitButton = document.getElementById('submitButton');
+
+    itemImageInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.classList.remove('hidden');
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    reportForm.addEventListener('submit', function() {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Submitting...';
+        submitButton.classList.add('opacity-75', 'cursor-not-allowed');
+    });
+</script>
+
+<%- include('partials/footer') %>

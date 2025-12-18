@@ -1,0 +1,23 @@
+<!-- views/item-detail.ejs -->
+<%- include('partials/header') %>
+<div class="container mx-auto px-4 py-10 max-w-4xl">
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden md:flex">
+        <div class="md:w-1/2">
+            <img src="<%= item.imageUrl %>" alt="<%= item.name %>" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found';">
+        </div>
+        <div class="p-8 md:w-1/2 flex flex-col">
+            <span class="px-3 py-1 text-sm font-semibold rounded-full self-start <%= item.status === 'Lost' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' %>">
+                <%= item.status %>
+            </span>
+            <h1 class="text-4xl font-extrabold text-gray-900 mt-4"><%= item.name %></h1>
+            <p class="mt-2 text-gray-500"><%= item.category %> at <%= item.university %></p>
+            <p class="mt-6 text-gray-700 flex-grow"><%= item.description %></p>
+            <div class="mt-8 pt-6 border-t">
+                <h3 class="text-lg font-bold">Contact Information</h3>
+                <p class="mt-2 text-gray-600">Email: <span class="font-semibold text-teal-600"><%= item.contactEmail %></span></p>
+                <p class="mt-1 text-gray-600">Phone: <span class="font-semibold text-teal-600"><%= item.contactPhone %></span></p>
+            </div>
+        </div>
+    </div>
+</div>
+<%- include('partials/footer') %>

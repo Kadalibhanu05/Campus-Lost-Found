@@ -1,0 +1,56 @@
+<%- include('partials/header') %>
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">My Reported Items</h1>
+        <a href="/report" class="text-teal-600 font-semibold hover:underline">+ Report New</a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <% if (items.length > 0) { %>
+            <% items.forEach(item => { %>
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-100 flex flex-col h-full">
+                    
+                    <a href="/item/<%= item._id %>" class="block relative h-48 overflow-hidden group">
+                        <img src="<%= item.imageUrl %>" 
+                             class="w-full h-full object-cover transform group-hover:scale-105 transition duration-500" 
+                             onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/ffffff?text=Image+Not+Found';">
+                        
+                        <span class="absolute top-2 right-2 px-2 py-1 text-xs font-bold uppercase rounded shadow-sm 
+                            <%= item.status === 'Lost' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' %>">
+                            <%= item.status %>
+                        </span>
+                    </a>
+
+                    <div class="p-5 flex-grow flex flex-col">
+                        <div class="flex-grow">
+                            <h3 class="text-lg font-bold text-gray-900 mb-1 truncate"><%= item.name %></h3>
+                            <p class="text-sm text-gray-500 mb-2"><%= item.university %></p>
+                            <p class="text-sm text-gray-600 line-clamp-2"><%= item.description %></p>
+                        </div>
+
+                        <div class="mt-5 flex gap-3">
+                            <a href="/items/<%= item._id %>/edit" 
+                               class="flex-1 flex items-center justify-center py-2 px-3 bg-blue-50 text-blue-600 font-semibold rounded-lg hover:bg-blue-100 transition duration-200">
+                                Edit
+                            </a>
+
+                            <form action="/items/<%= item._id %>/delete" method="POST" class="flex-1" onsubmit="return confirm('Are you sure you want to delete this item? This cannot be undone.');">
+                                <button type="submit" 
+                                    class="w-full py-2 px-3 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition duration-200">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <div class="col-span-full flex flex-col items-center justify-center py-16 text-center bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                <p class="text-gray-500 text-lg font-medium">You haven't reported any items yet.</p>
+                <a href="/report" class="mt-2 text-teal-600 font-semibold hover:underline">Report your first item now</a>
+            </div>
+        <% } %>
+    </div>
+</div>
+<%- include('partials/footer') %>
