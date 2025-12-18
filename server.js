@@ -50,7 +50,7 @@ const ItemSchema = new mongoose.Schema({
 }, { timestamps: true });
 const Item = mongoose.model('Item', ItemSchema);
 
-// --- NEW: UNIVERSITY MODEL ---
+// ---  UNIVERSITY MODEL ---
 const UniversitySchema = new mongoose.Schema({
     name: { type: String, required: true, unique: true, trim: true }
 });
@@ -93,10 +93,7 @@ const isAuthenticated = (req, res, next) => {
     next();
 };
 
-// ==========================================
-//               APP ROUTES
-// ==========================================
-
+//   APP ROUTES
 
 // 1. Home Route (Fetches Universities from DB)
 app.get('/', async (req, res) => {
@@ -109,11 +106,11 @@ app.get('/', async (req, res) => {
     }
 });
 
-// 2. NEW: Add University Route
+// 2. Add University Route
 app.post('/add-university', isAuthenticated, async (req, res) => {
     try {
         const { newUniversity } = req.body;
-        // Check case-insensitive existence
+        // it Checks case-insensitive existence
         const exists = await University.findOne({ 
             name: { $regex: new RegExp(`^${newUniversity}$`, 'i') } 
         });
@@ -220,7 +217,7 @@ app.get('/my-posts', isAuthenticated, async (req, res) => {
     }
 });
 
-// --- NEW: EDIT ROUTES ---
+// --- EDIT ROUTES ---
 
 // 1. Show Edit Form
 app.get('/items/:id/edit', isAuthenticated, async (req, res) => {
@@ -307,15 +304,6 @@ app.post('/items/:id/delete', isAuthenticated, async (req, res) => {
         res.status(500).send('Error deleting item.');
     }
 });
-
-// ==========================================
-//            AUTH ROUTES (UPDATED)
-// ==========================================
-
-// SIGNUP: Render Form & Handle Logic
-// ==========================================
-//            AUTH ROUTES (UPDATED)
-// ==========================================
 
 // SIGNUP: Render Form & Handle Logic
 app.route('/signup')
